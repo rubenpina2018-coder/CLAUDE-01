@@ -1,0 +1,19 @@
+# Entornos y cachés de Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Configuración local (contiene contraseñas)
+.env
+
+# Datos generados (reproducibles con generate_data.py --seed)
+data/raw/
+data/rejected/
+data/*.parquet
+
+# Sistema / IDE
+.DS_Store
+.idea/
+.vscode/

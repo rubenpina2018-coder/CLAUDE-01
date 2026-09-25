@@ -1,0 +1,5 @@
+# Dependencias de ejecución (versiones fijadas para reproducibilidad)
+polars==1.44.2
+psycopg2-binary==2.9.13
+SQLAlchemy==2.1.0
+numpy==2.4.6
