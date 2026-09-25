@@ -35,8 +35,9 @@ CREATE SCHEMA IF NOT EXISTS audit;
 
 COMMENT ON SCHEMA staging IS 'Aterrizaje transitorio del ETL (tablas UNLOGGED, se recargan en cada ejecución)';
 COMMENT ON SCHEMA dw      IS 'Modelo dimensional (Star Schema) de ventas';
-COMMENT ON SCHEMA bi      IS 'Capa de consumo para herramientas BI (solo vistas; acceso de solo lectura)';
 COMMENT ON SCHEMA audit   IS 'Trazabilidad de ejecuciones del ETL y registros rechazados';
+-- El comentario del esquema bi lo gestiona el despliegue de sql/bi_views.sql (guarda el hash
+-- del fichero desplegado para redesplegar automáticamente solo cuando cambia).
 
 -- =============================================================================
 -- DIMENSIONES

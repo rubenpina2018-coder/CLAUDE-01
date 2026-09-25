@@ -83,6 +83,8 @@ def main(argv: list[str] | None = None) -> int:
             # consultas acotadas en el tiempo aunque se le concedieran más permisos.
             conn.exec_driver_sql(f"ALTER ROLE {BI_READER_ROLE} SET default_transaction_read_only = on")
             conn.exec_driver_sql(f"ALTER ROLE {BI_READER_ROLE} SET statement_timeout = '120s'")
+            # Nombres sin cualificar (p. ej. consultas personalizadas de Looker Studio) resuelven en bi
+            conn.exec_driver_sql(f"ALTER ROLE {BI_READER_ROLE} SET search_path = bi, public")
             for db in databases:
                 print(f"  base de datos {db:<18} {ensure_database(conn, db, owner=dw.user)}")
     finally:

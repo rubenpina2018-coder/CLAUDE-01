@@ -18,11 +18,14 @@ Estrategia de sincronización (cada hoja es un snapshot completo del negocio):
   "disyuntor" aborta la carga si fuera a borrar más de un porcentaje razonable
   de la tabla (protege frente a exports truncados o vacíos).
 * Modo bulk adaptativo: PostgreSQL valida cada FK con una consulta por fila
-  insertada (4 FK x N filas), lo que triplica el coste de una carga masiva.
-  Si hay muchas filas nuevas, dentro de la misma transacción se retiran las FK
-  de ``fact_sales`` y se recrean tras insertar: al recrearlas se validan con una
-  única consulta set-based. Las definiciones se leen del catálogo (no pueden
-  divergir de ``init.sql``) y, si algo falla, el ROLLBACK las restaura.
+  insertada (4 FK x N filas) y mantiene cada índice fila a fila, lo que
+  multiplica el coste de una carga masiva. Si hay muchas filas nuevas, dentro
+  de la misma transacción se retiran las FK y los índices secundarios de
+  ``fact_sales`` y se recrean tras insertar: las FK se validan con una única
+  consulta set-based y los índices se construyen ordenando (mucho más rápido).
+  Las definiciones se leen del catálogo (no pueden divergir de ``init.sql``) y,
+  si algo falla, el ROLLBACK las restaura. Contrapartida asumida: durante una
+  carga masiva la tabla queda bloqueada para lectura hasta el COMMIT.
 """
 
 from __future__ import annotations
@@ -70,6 +73,14 @@ BULK_MODE_MIN_NEW_ROWS = 10_000
 FACT_FOREIGN_KEYS = """
     SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint
     WHERE conrelid = 'dw.fact_sales'::regclass AND contype = 'f' ORDER BY conname
+"""
+# Índices secundarios (no únicos y que no respaldan una restricción): se reconstruyen en bloque
+FACT_SECONDARY_INDEXES = """
+    SELECT i.relname, pg_get_indexdef(i.oid)
+    FROM pg_index x JOIN pg_class i ON i.oid = x.indexrelid
+    WHERE x.indrelid = 'dw.fact_sales'::regclass AND NOT x.indisunique
+      AND NOT EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conindid = x.indexrelid)
+    ORDER BY 1
 """
 NEW_FACTS = """
     SELECT count(*) FROM tmp_fact_source s
@@ -249,14 +260,21 @@ def load_star_schema(engine: Engine, run_id: int, products: SheetResult, custome
 
             cur.execute(NEW_FACTS)
             bulk_mode = cur.fetchone()[0] >= BULK_MODE_MIN_NEW_ROWS
-            foreign_keys = []
+            foreign_keys, indexes = [], []
             if bulk_mode:
+                cur.execute("SET LOCAL maintenance_work_mem = '256MB'")
                 cur.execute(FACT_FOREIGN_KEYS)
                 foreign_keys = cur.fetchall()
+                cur.execute(FACT_SECONDARY_INDEXES)
+                indexes = cur.fetchall()
                 if foreign_keys:
                     cur.execute("ALTER TABLE dw.fact_sales "
                                 + ", ".join(f"DROP CONSTRAINT {name}" for name, _ in foreign_keys))
+                if indexes:
+                    cur.execute("DROP INDEX " + ", ".join(f"dw.{name}" for name, _ in indexes))
             stats["fact_sales"] = {**_merge(cur, "fact_sales", params), "deleted": deleted, "bulk_mode": bulk_mode}
+            for _, definition in indexes:  # construcción ordenada, mucho más rápida que el mantenimiento fila a fila
+                cur.execute(definition)
             if foreign_keys:  # recrear = validar todas las filas con una consulta set-based por FK
                 cur.execute("ALTER TABLE dw.fact_sales "
                             + ", ".join(f"ADD CONSTRAINT {name} {definition}" for name, definition in foreign_keys))
@@ -294,11 +312,19 @@ def _file_hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()[:16]
 
 
-def refresh_bi_layer(engine: Engine, bi_sql: Path, force_deploy: bool = False) -> dict:
+def data_changed(load_stats: dict) -> bool:
+    """¿Modificó la carga alguna fila del modelo? (si no, las vistas materializadas ya están al día)."""
+    tables = ("dim_date", "dim_product", "dim_customer", "fact_sales")
+    return any(load_stats[t]["inserted"] or load_stats[t]["updated"] for t in tables) or bool(
+        load_stats["fact_sales"]["deleted"] or load_stats["dim_customer"].get("first_order_date_updated"))
+
+
+def refresh_bi_layer(engine: Engine, bi_sql: Path, force_deploy: bool = False, changed: bool = True) -> dict:
     """Despliega sql/bi_views.sql si es necesario; si no, refresca las vistas materializadas.
 
     El hash del fichero desplegado se guarda en el comentario del esquema ``bi``:
-    si el SQL cambia, el siguiente run lo redespliega automáticamente.
+    si el SQL cambia, el siguiente run lo redespliega automáticamente. Si la carga
+    no modificó datos (``changed=False``) el refresco se omite.
     """
     digest = _file_hash(bi_sql)
     with engine.connect() as conn:
@@ -311,14 +337,13 @@ def refresh_bi_layer(engine: Engine, bi_sql: Path, force_deploy: bool = False) -
             conn.exec_driver_sql(
                 f"COMMENT ON SCHEMA bi IS 'Capa de consumo para herramientas BI (bi_views.sql sha256:{digest})'")
         return {"action": "deployed", "sql_hash": digest}
+    if not changed:
+        return {"action": "skipped", "reason": "la carga no modificó datos: vistas ya actualizadas"}
 
-    raw = engine.raw_connection()
-    try:
-        raw.autocommit = True  # cada REFRESH en su propia transacción
-        with raw.cursor() as cur:
-            for mv in mviews:
-                # CONCURRENTLY: los dashboards pueden seguir consultando durante el refresco
-                cur.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY bi.{mv}")
-    finally:
-        raw.close()
+    # AUTOCOMMIT: cada REFRESH se confirma en su propia transacción. (Ojo: asignar ``autocommit``
+    # sobre el proxy de ``engine.raw_connection()`` no llega a la conexión psycopg2 subyacente.)
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        for mv in mviews:
+            # CONCURRENTLY: los dashboards pueden seguir consultando durante el refresco
+            conn.exec_driver_sql(f"REFRESH MATERIALIZED VIEW CONCURRENTLY bi.{mv}")
     return {"action": "refreshed", "materialized_views": list(mviews)}

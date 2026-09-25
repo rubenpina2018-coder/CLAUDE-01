@@ -35,11 +35,19 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import polars as pl
-from sqlalchemy.exc import OperationalError
+import psycopg2
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 from analytics_engine.config import RAW_DIR, REJECTED_DIR, SQL_DIR, DbSettings
 from analytics_engine.db import run_sql_script
-from analytics_engine.load import MassDeleteError, finish_run, load_star_schema, refresh_bi_layer, start_run
+from analytics_engine.load import (
+    MassDeleteError,
+    data_changed,
+    finish_run,
+    load_star_schema,
+    refresh_bi_layer,
+    start_run,
+)
 from analytics_engine.transform import (
     SheetResult,
     SheetSchemaError,
@@ -211,6 +219,11 @@ def main(argv: list[str] | None = None) -> int:
             run_sql_script(engine, SQL_DIR / "init.sql")
     except OperationalError as exc:
         log.error("No se puede conectar a %s: %s", settings.describe(), exc.orig)
+        engine.dispose()
+        return 2
+    except (SQLAlchemyError, psycopg2.Error) as exc:  # p. ej. permisos insuficientes al crear el esquema
+        log.error("Error preparando el esquema en %s: %s", settings.describe(), getattr(exc, "orig", exc))
+        engine.dispose()
         return 2
 
     run_id = start_run(engine, source=str(args.source_dir.resolve()))
@@ -234,7 +247,8 @@ def main(argv: list[str] | None = None) -> int:
             checks = metrics["load"].pop("checks")
         if not args.skip_bi:
             with phase("Capa BI", timings):
-                metrics["bi"] = refresh_bi_layer(engine, SQL_DIR / "bi_views.sql", force_deploy=args.deploy_bi)
+                metrics["bi"] = refresh_bi_layer(engine, SQL_DIR / "bi_views.sql", force_deploy=args.deploy_bi,
+                                                 changed=data_changed(metrics["load"]))
                 log.info("  %s", metrics["bi"])
                 checks += bi_checks(engine, sales)
         status = "success" if all(c.passed for c in checks) else "failed"
@@ -248,7 +262,6 @@ def main(argv: list[str] | None = None) -> int:
         finish_run(engine, run_id, "failed", {**metrics, "timings_s": timings,
                                               "checks": [c.__dict__ for c in checks]}, error=str(exc))
         print_summary(run_id, "failed", metrics, checks, time.perf_counter() - started)
-        engine.dispose()
         return 1
     except (SheetSchemaError, DataQualityError, MassDeleteError, FileNotFoundError) as exc:
         log.error("%s", exc)
