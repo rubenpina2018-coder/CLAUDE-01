@@ -1,0 +1,15 @@
+[2026-09-25 05:30:34,048] vm/INFO/locust.main: Starting Locust 2.46.6
+[2026-09-25 05:30:34,080] vm/INFO/locust.runners: vm_022bc27635974d6ba65a368df206ea18 (index 0) reported as ready. 1 workers connected.
+[2026-09-25 05:30:34,081] vm/INFO/locust.runners: vm_36780b195acf4a6fbd3b5842c2e1adfd (index 1) reported as ready. 2 workers connected.
+[2026-09-25 05:30:35,076] vm/INFO/locust.main: Run time limit set to 30 seconds
+[2026-09-25 05:30:35,077] vm/INFO/locust.runners: Sending spawn jobs of 100 users at 100.00 spawn rate to 2 ready workers
+[2026-09-25 05:30:35,165] vm/INFO/locust.runners: All users spawned: {"ClienteAPI": 100} (100 total users)
+[2026-09-25 05:31:05,077] vm/INFO/locust.main: --run-time limit reached, shutting down
+[2026-09-25 05:31:05,079] vm/INFO/locust.runners: Got quit message from master, shutting down...
+[2026-09-25 05:31:05,079] vm/INFO/locust.runners: Got quit message from master, shutting down...
+[2026-09-25 05:31:05,108] vm/INFO/locust.main: Shutting down (exit code 0)
+[2026-09-25 05:31:05,109] vm/INFO/locust.runners: Worker 'vm_022bc27635974d6ba65a368df206ea18' (index 0) quit. 0 workers ready.
+[2026-09-25 05:31:05,122] vm/INFO/locust.main: Shutting down (exit code 0)
+[2026-09-25 05:31:05,122] vm/INFO/locust.runners: Worker 'vm_36780b195acf4a6fbd3b5842c2e1adfd' (index 1) quit. 0 workers ready.
+[2026-09-25 05:31:05,122] vm/INFO/locust.runners: The last worker quit, stopping test.
+[2026-09-25 05:31:06,200] vm/INFO/locust.main: Shutting down (exit code 0)

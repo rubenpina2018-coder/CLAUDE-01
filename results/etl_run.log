@@ -1,0 +1,41 @@
+2026-09-25 05:29:52,653 INFO Polars 1.44.2 con 4 hilos
+2026-09-25 05:29:52,705 INFO extract: lectura Parquet                   0.052 s
+2026-09-25 05:29:53,307 INFO transform: limpieza + dedupe + monto_neto   0.601 s
+2026-09-25 05:29:53,439 INFO load: preparar tabla de carga              0.007 s
+2026-09-25 05:29:54,511 INFO   trabajador 1:  5 lotes,  238,003 filas en 1.07s
+2026-09-25 05:29:54,512 INFO   trabajador 0:  5 lotes,  250,000 filas en 1.07s
+2026-09-25 05:29:54,512 INFO   trabajador 2:  5 lotes,  250,000 filas en 1.07s
+2026-09-25 05:29:54,512 INFO   trabajador 3:  5 lotes,  250,000 filas en 1.07s
+2026-09-25 05:29:54,515 INFO load: COPY paralelo (4 conexiones)         1.076 s
+2026-09-25 05:29:55,149 INFO load: índices en paralelo + PK             0.634 s
+2026-09-25 05:29:55,419 INFO load: VACUUM ANALYZE                       0.270 s
+2026-09-25 05:29:55,852 INFO load: vista de resumen + auditoría         0.433 s
+2026-09-25 05:29:55,859 INFO load: swap atómico (publicación)           0.007 s
+
+==============================================================
+ RESUMEN DEL PIPELINE ETL
+==============================================================
+ Filas leídas del Parquet        1,001,000
+ Filas rechazadas                   12,997  (1.30 %)
+   - monto_nulo                      4,988
+   - tipo_nulo                       3,026
+   - usuario_nulo                    1,960
+   - fecha_nula                      1,040
+   - duplicado                       1,000
+   - monto_no_positivo                 983
+ Filas cargadas en PostgreSQL      988,003
+ Auditoría (Polars == PG)     OK  monto=191455827.64  neto=186705095.44
+==============================================================
+ extract: lectura Parquet                      0.052 s
+ transform: limpieza + dedupe + monto_neto     0.601 s
+ load: preparar tabla de carga                 0.007 s
+ load: COPY paralelo (4 conexiones)            1.076 s
+ load: índices en paralelo + PK                0.634 s
+ load: VACUUM ANALYZE                          0.270 s
+ load: vista de resumen + auditoría            0.433 s
+ load: swap atómico (publicación)              0.007 s
+==============================================================
+ COPY: 20 lotes, 75.9 MB CSV, 918,457 filas/s
+ TIEMPO TOTAL ETL                               3.220 s  (310,873 filas/s)
+==============================================================
+2026-09-25 05:29:55,877 INFO Métricas guardadas en /home/user/CLAUDE-01/results/etl_metrics.json

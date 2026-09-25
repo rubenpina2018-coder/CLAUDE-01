@@ -1,0 +1,23 @@
+2026-09-25 05:29:52,331 INFO Esquema: {'id': Int64, 'fecha': Datetime(time_unit='us', time_zone='UTC'), 'usuario_id': Int32, 'monto': Decimal(precision=14, scale=2), 'tipo_transaccion': String, 'estado': String}
+2026-09-25 05:29:52,331 INFO Nulos por columna: {'id': 0, 'fecha': 1043, 'usuario_id': 1962, 'monto': 5001, 'tipo_transaccion': 3049, 'estado': 10065}
+2026-09-25 05:29:52,357 INFO Ids duplicados: 1,000
+2026-09-25 05:29:52,361 INFO Montos <= 0: 984
+2026-09-25 05:29:52,362 INFO Muestra:
+shape: (5, 6)
+┌─────┬────────────────────────────┬────────────┬───────────────┬──────────────────┬────────────┐
+│ id  ┆ fecha                      ┆ usuario_id ┆ monto         ┆ tipo_transaccion ┆ estado     │
+│ --- ┆ ---                        ┆ ---        ┆ ---           ┆ ---              ┆ ---        │
+│ i64 ┆ datetime[μs, UTC]          ┆ i32        ┆ decimal[14,2] ┆ str              ┆ str        │
+╞═════╪════════════════════════════╪════════════╪═══════════════╪══════════════════╪════════════╡
+│ 1   ┆ 2025-01-01 00:00:03.942101 ┆ 5812       ┆ 25.62         ┆ COMPRA           ┆ COMPLETADA │
+│     ┆ UTC                        ┆            ┆               ┆                  ┆            │
+│ 2   ┆ 2025-01-01 00:01:16.842672 ┆ 6524       ┆ 138.59        ┆ PAGO_SERVICIO    ┆ COMPLETADA │
+│     ┆ UTC                        ┆            ┆               ┆                  ┆            │
+│ 3   ┆ 2025-01-01 00:01:27.351497 ┆ 1333       ┆ 24.24         ┆ COMPRA           ┆ PENDIENTE  │
+│     ┆ UTC                        ┆            ┆               ┆                  ┆            │
+│ 4   ┆ 2025-01-01 00:02:00.658677 ┆ 8038       ┆ 349.19        ┆ DEPOSITO         ┆ COMPLETADA │
+│     ┆ UTC                        ┆            ┆               ┆                  ┆            │
+│ 5   ┆ 2025-01-01 00:02:26.741801 ┆ 4305       ┆ 69.87         ┆ PAGO_SERVICIO    ┆ COMPLETADA │
+│     ┆ UTC                        ┆            ┆               ┆                  ┆            │
+└─────┴────────────────────────────┴────────────┴───────────────┴──────────────────┴────────────┘
+2026-09-25 05:29:52,362 INFO Generadas 1,001,000 filas en 0.86s; Parquet escrito en 0.09s -> /home/user/CLAUDE-01/data/transacciones.parquet (10.2 MB)

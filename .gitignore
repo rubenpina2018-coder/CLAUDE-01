@@ -1,0 +1,12 @@
+# Entorno
+.venv/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Datos generados (reproducibles con `make data`)
+data/
+
+# Informe HTML de Locust (~1 MB, se regenera con `make loadtest`)
+results/**/*.html

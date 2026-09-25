@@ -1,0 +1,35 @@
+{
+  "filas_leidas": 1001000,
+  "filas_cargadas": 988003,
+  "filas_rechazadas": 12997,
+  "rechazos_por_motivo": {
+    "monto_nulo": 4988,
+    "tipo_nulo": 3026,
+    "usuario_nulo": 1960,
+    "fecha_nula": 1040,
+    "duplicado": 1000,
+    "monto_no_positivo": 983
+  },
+  "conexiones": 4,
+  "filas_por_lote": 50000,
+  "lotes": 20,
+  "mb_csv_enviados": 75.9,
+  "copy_filas_por_segundo": 918457,
+  "tiempos_s": {
+    "extract: lectura Parquet": 0.052,
+    "transform: limpieza + dedupe + monto_neto": 0.601,
+    "load: preparar tabla de carga": 0.007,
+    "load: COPY paralelo (4 conexiones)": 1.076,
+    "load: índices en paralelo + PK": 0.634,
+    "load: VACUUM ANALYZE": 0.27,
+    "load: vista de resumen + auditoría": 0.433,
+    "load: swap atómico (publicación)": 0.007
+  },
+  "total_s": 3.22,
+  "total_filas_por_segundo": 310873,
+  "auditoria": {
+    "filas": "988003",
+    "monto": "191455827.64",
+    "monto_neto": "186705095.44"
+  }
+}

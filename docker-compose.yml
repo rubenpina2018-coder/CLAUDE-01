@@ -1,0 +1,67 @@
+# Infraestructura local: PostgreSQL 16 afinado para dos cargas de trabajo:
+#   * escrituras masivas del ETL (COPY paralelo + construcción de índices)
+#   * lecturas de baja latencia de la API (todo el working set en memoria)
+#
+# Uso:  docker-compose up -d        (o `docker compose up -d` con Compose v2+)
+name: etl-finanzas
+
+services:
+  postgres:
+    # Sobrescribible con POSTGRES_IMAGE si Docker Hub no está disponible,
+    # p. ej. POSTGRES_IMAGE=mirror.gcr.io/library/postgres:16
+    image: ${POSTGRES_IMAGE:-postgres:16}
+    container_name: etl-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-etl_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-etl_password}
+      POSTGRES_DB: ${POSTGRES_DB:-finanzas}
+    ports:
+      # Solo loopback: la base de datos no queda expuesta fuera del host.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    # Los workers de consultas/índices paralelos usan memoria compartida
+    # dinámica en /dev/shm (64 MB por defecto en Docker: insuficiente).
+    shm_size: 1g
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    command:
+      - postgres
+      # Memoria: tabla + índices (~200 MB) caben completos en shared_buffers.
+      - -c
+      - shared_buffers=1GB
+      - -c
+      - effective_cache_size=4GB
+      - -c
+      - work_mem=32MB
+      # Construcción de índices rápida y en paralelo tras la carga masiva.
+      - -c
+      - maintenance_work_mem=1GB
+      - -c
+      - max_parallel_maintenance_workers=4
+      - -c
+      - max_parallel_workers_per_gather=4
+      # WAL: evita checkpoints forzados en mitad de la carga masiva.
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - min_wal_size=1GB
+      - -c
+      - wal_buffers=64MB
+      - -c
+      - checkpoint_timeout=15min
+      # Latencia predecible para consultas OLTP cortas.
+      - -c
+      - jit=off
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - max_connections=200
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+volumes:
+  pgdata:
