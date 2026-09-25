@@ -19,6 +19,7 @@ packages = ["analytics_engine"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = [
     "db: tests de integración que necesitan una instancia de PostgreSQL accesible",
 ]

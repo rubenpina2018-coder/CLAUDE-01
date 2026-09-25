@@ -74,16 +74,20 @@ def fix_case(expr: pl.Expr) -> pl.Expr:
     return pl.when(uniform).then(text.str.to_titlecase()).otherwise(text)
 
 
-def parse_decimal(expr: pl.Expr) -> pl.Expr:
-    """Número en formato es_ES o en_US, con o sin símbolo de moneda -> Float64 (nulo si no es válido)."""
-    text = clean_text(expr).str.replace_all(r"(?i)eur|usd|€|\$|\s", "")
-    es_format = text.str.contains(_ES_NUMBER)
+def _number_from_clean_text(text: pl.Expr) -> pl.Expr:
+    """Número desde un texto YA limpio (evita repetir ``clean_text`` en expresiones compuestas)."""
+    compact = text.str.replace_all(r"(?i)eur|usd|€|\$|\s", "")
     normalized = (
-        pl.when(es_format)
-        .then(text.str.replace_all(".", "", literal=True).str.replace(",", ".", literal=True))
-        .otherwise(text.str.replace_all(",", "", literal=True))
+        pl.when(compact.str.contains(_ES_NUMBER))
+        .then(compact.str.replace_all(".", "", literal=True).str.replace(",", ".", literal=True))
+        .otherwise(compact.str.replace_all(",", "", literal=True))
     )
     return normalized.cast(pl.Float64, strict=False)
+
+
+def parse_decimal(expr: pl.Expr) -> pl.Expr:
+    """Número en formato es_ES o en_US, con o sin símbolo de moneda -> Float64 (nulo si no es válido)."""
+    return _number_from_clean_text(clean_text(expr))
 
 
 def to_cents(expr: pl.Expr) -> pl.Expr:
@@ -100,7 +104,7 @@ def parse_int(expr: pl.Expr) -> pl.Expr:
 def parse_percent_bp(expr: pl.Expr) -> pl.Expr:
     """Porcentaje -> puntos básicos enteros (1 % = 100 pb)."""
     text = clean_text(expr)
-    value = parse_decimal(text.str.replace_all("%", "", literal=True))
+    value = _number_from_clean_text(text.str.replace_all("%", "", literal=True))
     fraction = pl.when(text.str.contains("%", literal=True) | (value >= 1)).then(value / 100).otherwise(value)
     return (fraction * 10_000).round(0).cast(pl.Int64)
 
@@ -166,6 +170,8 @@ def canonicalize_by_mode(df: pl.DataFrame, column: str) -> pl.DataFrame:
 
     Canonicalización guiada por los datos: no necesita catálogos hard-codeados y
     se adapta a valores nuevos. Empates: gana el orden alfabético (determinista).
+    Si la grafía ganadora está TODA en mayúsculas o minúsculas (el valor solo
+    aparece "sucio"), se pasa a Título con :func:`fix_case`.
     """
     key = fold(pl.col(column))
     canonical = (
@@ -175,7 +181,7 @@ def canonicalize_by_mode(df: pl.DataFrame, column: str) -> pl.DataFrame:
         .len()
         .sort(["_key", "len", "_value"], descending=[False, True, False])
         .unique("_key", keep="first", maintain_order=True)
-        .select("_key", pl.col("_value").alias("_canonical"))
+        .select("_key", fix_case(pl.col("_value")).alias("_canonical"))
     )
     return (
         df.with_columns(key.alias("_key"))
