@@ -1,0 +1,9 @@
+# Runtime dependencies of the inference container (no scikit-learn / pandas:
+# the optimized model runs on a numpy-only engine).
+numpy==2.4.6
+pydantic==2.13.5
+pydantic-settings==2.15.0
+fastapi==0.141.1
+uvicorn==0.53.0
+uvloop==0.22.1; sys_platform != "win32"
+httptools==0.8.0

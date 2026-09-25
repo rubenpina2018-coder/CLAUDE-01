@@ -1,0 +1,9 @@
+# Allowlist: the build context only contains what the image needs.
+*
+!requirements/serve.txt
+!app/
+!src/fraud_detection/
+!outputs/model/model.gguf
+!outputs/registry/**/model.gguf
+**/__pycache__
+**/*.py[cod]

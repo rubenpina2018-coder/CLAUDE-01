@@ -1,0 +1,4 @@
+# Excluded from the Azure ML code snapshot uploaded with each component.
+__pycache__/
+*.py[cod]
+*.egg-info/

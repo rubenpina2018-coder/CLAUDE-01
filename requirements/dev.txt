@@ -1,0 +1,8 @@
+-r serve.txt
+-r train.txt
+pytest==9.1.1
+httpx2==2.13.1  # used by starlette.testclient
+ruff==0.16.9
+# Reference GGUF implementation (llama.cpp's gguf-py): used only by tests to
+# verify our container and Q4_0/Q8_0 kernels are bit-exact with ggml.
+gguf==0.19.0

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fraud-detection-mlops"
+version = "1.0.0"
+description = "Azure ML (SDK v2) MLOps pipeline and quantized-GBDT inference service for card-fraud detection"
+readme = "README.md"
+requires-python = ">=3.11"
+# Core library (schema, featurizer, quantization, GGUF container, runtime) is numpy + pydantic only.
+dependencies = ["numpy>=2.0,<3", "pydantic>=2.7,<3"]
+
+[project.optional-dependencies]
+train = ["pandas>=2.2", "scikit-learn>=1.6,<1.10", "joblib>=1.4", "pyyaml>=6"]
+azure = ["azure-ai-ml>=1.20", "azure-identity>=1.17"]
+serve = ["fastapi>=0.115", "uvicorn>=0.30", "pydantic-settings>=2.4"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["fraud_detection*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "src"]
+addopts = "-ra --strict-markers"
+filterwarnings = ["ignore::DeprecationWarning:azure.*", "ignore::DeprecationWarning:marshmallow.*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["RUF001", "RUF002", "RUF003"]  # allow non-ASCII (Spanish) in strings/comments
+
+[tool.ruff.lint.isort]
+known-first-party = ["fraud_detection", "app"]

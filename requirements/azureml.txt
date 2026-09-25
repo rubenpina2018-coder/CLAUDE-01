@@ -1,0 +1,5 @@
+# Azure ML job environment = training deps + MLflow bridge so metrics show up in
+# Azure ML Studio (fraud_detection.tracking is a no-op when MLflow is absent).
+-r train.txt
+mlflow-skinny==3.16.1
+azureml-mlflow==1.62.0.post6

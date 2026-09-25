@@ -1,0 +1,40 @@
+{
+  "instances": [
+    {
+      "transaction_id": "txn-suspicious",
+      "amount": 1249.99,
+      "customer_avg_amount_30d": 58.2,
+      "account_age_days": 412,
+      "customer_age": 37,
+      "txn_count_1h": 2,
+      "txn_count_24h": 5,
+      "minutes_since_last_txn": 3.5,
+      "distance_from_home_km": 2310.0,
+      "hour_of_day": 3,
+      "failed_logins_24h": 4,
+      "merchant_category": "electronics",
+      "channel": "online",
+      "is_new_device": true,
+      "card_present": false,
+      "is_international": true
+    },
+    {
+      "transaction_id": "txn-regular",
+      "amount": 42.1,
+      "customer_avg_amount_30d": 47.9,
+      "account_age_days": 2210,
+      "customer_age": 51,
+      "txn_count_1h": 0,
+      "txn_count_24h": 3,
+      "minutes_since_last_txn": 185.0,
+      "distance_from_home_km": 3.2,
+      "hour_of_day": 13,
+      "failed_logins_24h": 0,
+      "merchant_category": "grocery",
+      "channel": "pos",
+      "is_new_device": false,
+      "card_present": true,
+      "is_international": false
+    }
+  ]
+}
