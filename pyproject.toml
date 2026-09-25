@@ -3,7 +3,7 @@ name = "analytics-engine"
 version = "1.0.0"
 description = "Motor analítico end-to-end: datos tipo Google Sheets -> Polars -> PostgreSQL (Star Schema) -> Power BI / Looker Studio"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "polars>=1.30",
     "psycopg2-binary>=2.9",

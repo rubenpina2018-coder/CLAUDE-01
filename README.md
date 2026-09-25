@@ -40,7 +40,7 @@ flowchart LR
 
 ## 1. Puesta en marcha
 
-**Requisitos:** Python ≥ 3.10 y PostgreSQL ≥ 13 (probado con Python 3.11 y PostgreSQL 16.13). En Windows, Power BI Desktop se instala aparte; `psql` es opcional.
+**Requisitos:** Python 3.11 a 3.14 y PostgreSQL ≥ 13 (probado con Python 3.11 y PostgreSQL 16.13). Las versiones fijadas de NumPy y SQLAlchemy no admiten Python 3.10. En Windows, Power BI Desktop se instala aparte; `psql` es opcional.
 
 ### 1.1 Entorno Python
 
@@ -111,7 +111,7 @@ psql -h localhost -U etl_user -d analytics_dw -v ON_ERROR_STOP=1 -f sql/init.sql
 ### 1.4 Comprobación rápida
 
 ```bash
-pytest                                                              # 75 tests (los de BD necesitan --with-test-db)
+pytest                                                              # 77 tests (los de BD necesitan --with-test-db)
 psql -h localhost -U bi_reader -d analytics_dw -f sql/kpi_validation.sql   # KPIs de referencia
 ```
 
@@ -222,7 +222,7 @@ Después: `SELECT pg_reload_conf();` (o reinicia si cambiaste `listen_addresses`
 │   ├── bi_views.sql          # Hito 4 · vistas y vistas materializadas para BI
 │   └── kpi_validation.sql    #         equivalente SQL de las medidas DAX
 ├── BI_MEASURES.md            # Hito 4 · 10 medidas DAX críticas + valores de referencia
-├── tests/                    # 75 tests: unitarios, transformación e integración con PostgreSQL
+├── tests/                    # 77 tests: unitarios, transformación e integración con PostgreSQL
 ├── requirements*.txt · pyproject.toml · .env.example
 └── data/                     # (no versionado) raw/ y rejected/
 ```
@@ -429,12 +429,13 @@ Las vistas materializadas tienen un índice único (necesario para `REFRESH … 
 | `capa_bi_sincronizada` | `bi.mv_sales_flat` cuadra con los hechos tras el refresco |
 | `permisos_bi_reader` | `bi_reader` lee `bi` y **no** puede leer `dw` |
 
-**Tests** (`pytest`, 75 tests en unos 6 s):
+**Tests** (`pytest`, 77 tests en unos 6 s):
 
 | Fichero | Cubre |
 |---------|-------|
 | `tests/test_cleaning.py` | Parseo de números es_ES/en_US, fechas (incluidos seriales de Sheets), porcentajes, booleanos, IDs, emails, teléfonos y canonicalización |
 | `tests/test_transform.py` | Cada regla de negocio sobre hojas construidas a mano (duplicados, versiones, rechazos, imputación, cancelados, redondeo), la dimensión fecha y la Pascua, y el cuadre exacto con el manifiesto |
+| `tests/test_config.py` | Lectura del `.env` (BOM de editores de Windows, comillas, prioridad de las variables de entorno) |
 | `tests/test_generator.py` | Determinismo por semilla, **≥ 50.000 registros**, modo limpio y `--dry-run` sin BD |
 | `tests/test_pipeline_db.py` | End-to-end en PostgreSQL:<br>· carga completa<br>· **idempotencia**<br>· sincronización incremental (1 alta, 1 cambio, 5 bajas y 1 cambio de dimensión)<br>· **disyuntor**<br>· **ROLLBACK por validación fallida**<br>· permisos de `bi_reader`<br>· auditoría |
 
