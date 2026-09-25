@@ -687,10 +687,12 @@ def build_customers_sheet(rng, customers: pl.DataFrame, rate: float) -> tuple[pl
     idx = split_disjoint(rng, np.arange(n), {
         "bad_email": int(round(n * 0.012 * rate)), "no_email": int(round(n * 0.008 * rate)),
         "bad_signup": int(round(n * 0.005 * rate)), "stale": int(round(n * 0.01 * rate))})
-    bad_emails = ("sin email", "N/A", "maria.garcia@", "correo pendiente", "juan perez@gmail.com")
+    # Inválido = texto presente pero ilegible; ausente = celda vacía o marcador de vacío (N/A, #REF!...)
+    bad_emails = ("sin email", "maria.garcia@", "correo pendiente", "juan perez@gmail.com")
     body = overwrite(body, idx["bad_email"], "Email", [pick(rng, bad_emails) for _ in idx["bad_email"]])
-    body = overwrite(body, idx["no_email"], "Email", [None] * idx["no_email"].size)
-    body = overwrite(body, idx["bad_signup"], "Fecha Registro", ["#REF!"] * idx["bad_signup"].size)
+    body = overwrite(body, idx["no_email"], "Email", [pick(rng, ("", "N/A", "-")) or None for _ in idx["no_email"]])
+    body = overwrite(body, idx["bad_signup"], "Fecha Registro",
+                     [pick(rng, ("31/02/2024", "pendiente", "2024-13-45")) for _ in idx["bad_signup"]])
     # Versión antigua (email y segmento desactualizados) en la posición original; la vigente, al final.
     stale_idx = idx["stale"]
     stale_src = take_rows(customers, stale_idx).with_columns(

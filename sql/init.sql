@@ -185,10 +185,10 @@ CREATE TABLE IF NOT EXISTS dw.fact_sales (
     sales_key         BIGINT        GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     order_id          VARCHAR(20)   NOT NULL,
     order_line        SMALLINT      NOT NULL CHECK (order_line > 0),
-    date_key          INTEGER       NOT NULL REFERENCES dw.dim_date (date_key),
-    customer_key      INTEGER       NOT NULL REFERENCES dw.dim_customer (customer_key),
-    product_key       INTEGER       NOT NULL REFERENCES dw.dim_product (product_key),
-    channel_key       SMALLINT      NOT NULL REFERENCES dw.dim_channel (channel_key),
+    date_key          INTEGER       NOT NULL CONSTRAINT fk_fact_sales_date     REFERENCES dw.dim_date (date_key),
+    customer_key      INTEGER       NOT NULL CONSTRAINT fk_fact_sales_customer REFERENCES dw.dim_customer (customer_key),
+    product_key       INTEGER       NOT NULL CONSTRAINT fk_fact_sales_product  REFERENCES dw.dim_product (product_key),
+    channel_key       SMALLINT      NOT NULL CONSTRAINT fk_fact_sales_channel  REFERENCES dw.dim_channel (channel_key),
     order_status      VARCHAR(20)   NOT NULL CHECK (order_status IN ('Completado', 'Devuelto')),
     is_returned       BOOLEAN       GENERATED ALWAYS AS (order_status = 'Devuelto') STORED,
     payment_method    VARCHAR(30)   NOT NULL,
@@ -312,10 +312,12 @@ CREATE TABLE IF NOT EXISTS audit.rejected_record (
     source_sheet      VARCHAR(40)   NOT NULL,
     source_row        INTEGER       NOT NULL,
     reason            VARCHAR(60)   NOT NULL,
+    record_key        VARCHAR(60),
     record            JSONB         NOT NULL
 );
 COMMENT ON TABLE  audit.rejected_record            IS 'Filas de las hojas que no superaron las reglas de calidad';
 COMMENT ON COLUMN audit.rejected_record.source_row IS 'Número de fila en la hoja de cálculo (la fila 1 es la cabecera)';
+COMMENT ON COLUMN audit.rejected_record.record_key IS 'Clave normalizada si se pudo obtener (SKU, ID de cliente o pedido/línea)';
 COMMENT ON COLUMN audit.rejected_record.record     IS 'Valores originales de la fila, tal y como venían en la hoja';
 CREATE INDEX IF NOT EXISTS ix_rejected_record_run ON audit.rejected_record (run_id, source_sheet, reason);
 
